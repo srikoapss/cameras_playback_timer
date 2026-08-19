@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# PyInstaller build output
+build/
+dist/
+*.spec
+
+# Machine-specific settings: regenerated from DEFAULTS in config.py on first run
+config.json
+
+# Local database and scanned documents
+*.db
+*.db-journal
+files/
+
+*.exe
