@@ -18,3 +18,8 @@ config.json
 files/
 
 *.exe
+
+config.json
+*.json
+!config.template.json
+!config.example.json
