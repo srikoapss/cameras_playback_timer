@@ -4,6 +4,9 @@ import pyautogui
 import pywinctl as pwc
 from datetime import datetime
 from config import SETTINGS
+import psutil
+import subprocess
+
 
 # Configuration
 APP_PATH = SETTINGS["APP_PATH"]
@@ -13,6 +16,19 @@ END_HOUR = SETTINGS["END_HOUR"]    # 3 PM
 START_MINUTE = SETTINGS["START_MINUTE"]
 END_MINUTE = SETTINGS["END_MINUTE"]
 APP_PROCESS_NAME = SETTINGS["APP_PROCESS_NAME"] # The actual process name to kill
+
+def is_app_running():
+    """Check if the app process is already running."""
+    process_name = APP_PROCESS_NAME
+    
+    for proc in psutil.process_iter(['name']):
+        try:
+            if proc.info['name'] == process_name:
+                print(f"Found running instance: {process_name}")
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue
+    return False
 
 def make_window_fullscreen(window_title, timeout=10):
     """
@@ -63,9 +79,9 @@ def make_window_fullscreen(window_title, timeout=10):
             
             # Method 2: Try just F11 (if Fn is locked)
             try:
-                pyautogui.press('f11')
+                # pyautogui.press('f11')
                 time.sleep(0.5)
-                print("Sent F11")
+                # print("Sent F11")
             except:
                 pass
             
@@ -86,10 +102,14 @@ def make_window_fullscreen(window_title, timeout=10):
 
 def main():
     try:
-        # Launch the application
-        print(f"Launching {APP_PATH} at {datetime.now()}")
-        subprocess.Popen([APP_PATH])
-        print("Waiting for application to start...")
+        if is_app_running():
+            print("App already running! Not launching again.")
+            return
+        else:
+            # Launch the application
+            print(f"Launching {APP_PATH} at {datetime.now()}")
+            subprocess.Popen([APP_PATH])
+            print("Waiting for application to start...")
         
         # Give it time to start up
         time.sleep(10)
