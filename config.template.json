@@ -1,9 +1,15 @@
 {
-  "app_path": "C:\\Program Files\\PostgreSQL\\18\\pgAdmin 4\\runtime\\pgAdmin4.exe",
-  "app_window_title": "pgAdmin 4",
-  "app_process_name": "pgAdmin4.exe",
-  "start_hour": 14,
-  "start_minute": 0,
-  "end_hour": 15,
-  "end_minute": 10
+    "APP_PATH": "C:\\ProgramData\\kevin.maldonado\\Postman\\Postman.exe",
+    "APP_WINDOW_TITLE": "My Collection - kevin's Workspace",
+    "START_HOUR": 58,
+    "END_HOUR": 10,
+    "START_MINUTE": 0,
+    "END_MINUTE": 58,
+    "APP_PROCESS_NAME": "Postman.exe",
+    "FULLSCREEN_IMAGE": "ptm_fullscreen_btn.png",
+    "MAIN_VIEW_IMAGE": "ivms_main_view.png",
+    "STARTUP_TIMEOUT_SECONDS": 30,
+    "WINDOW_CHECK_INTERVAL_SECONDS": 1,
+    "FULLSCREEN_TIMEOUT_SECONDS": 120,
+    "FULLSCREEN_CLICK_DELAY_SECONDS": 4
 }

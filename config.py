@@ -12,7 +12,13 @@ DEFAULTS = {
     "END_HOUR": 9,
     "START_MINUTE": 0,
     "END_MINUTE": 15,
-    "APP_PROCESS_NAME": "pgAdmin4.exe"
+    "APP_PROCESS_NAME": "pgAdmin4.exe",
+    "FULLSCREEN_IMAGE": "fullscreen_btn.png",
+    "MAIN_VIEW_IMAGE": "main_view.png",
+    "STARTUP_TIMEOUT_SECONDS": 30,
+    "WINDOW_CHECK_INTERVAL_SECONDS": 1,
+    "FULLSCREEN_TIMEOUT_SECONDS": 120,
+    "FULLSCREEN_CLICK_DELAY_SECONDS": 4
 }
 
 CONFIG_PATH = os.path.join(APP_DIR, "config.json")

@@ -3,7 +3,7 @@ import time
 import pyautogui
 import pywinctl as pwc
 from datetime import datetime
-from config import SETTINGS
+from config import SETTINGS, resolve_path    
 import psutil
 import subprocess
 
@@ -11,11 +11,35 @@ import subprocess
 # Configuration
 APP_PATH = SETTINGS["APP_PATH"]
 APP_WINDOW_TITLE = SETTINGS["APP_WINDOW_TITLE"]  # Exact title that appears in window title bar
-START_HOUR = SETTINGS["START_HOUR"]  # 2 PM
-END_HOUR = SETTINGS["END_HOUR"]    # 3 PM
+START_HOUR = SETTINGS["START_HOUR"]  
+END_HOUR = SETTINGS["END_HOUR"]    
 START_MINUTE = SETTINGS["START_MINUTE"]
 END_MINUTE = SETTINGS["END_MINUTE"]
 APP_PROCESS_NAME = SETTINGS["APP_PROCESS_NAME"] # The actual process name to kill
+FULLSCREEN_IMAGE = resolve_path(SETTINGS["FULLSCREEN_IMAGE"])
+MAIN_VIEW_IMAGE = resolve_path(SETTINGS["MAIN_VIEW_IMAGE"])
+STARTUP_TIMEOUT_SECONDS = SETTINGS["STARTUP_TIMEOUT_SECONDS"]
+WINDOW_CHECK_INTERVAL_SECONDS = SETTINGS["WINDOW_CHECK_INTERVAL_SECONDS"]
+FULLSCREEN_TIMEOUT_SECONDS = SETTINGS["FULLSCREEN_TIMEOUT_SECONDS"]
+FULLSCREEN_CLICK_DELAY_SECONDS = SETTINGS["FULLSCREEN_CLICK_DELAY_SECONDS"]
+
+def find_image(image_path, label):
+    print(f"Waiting up to {FULLSCREEN_TIMEOUT_SECONDS} seconds for {label}...")
+    deadline = time.monotonic() + FULLSCREEN_TIMEOUT_SECONDS
+    while time.monotonic() < deadline:
+        try:
+            location = pyautogui.locateCenterOnScreen(image_path, confidence=0.8)
+        except pyautogui.ImageNotFoundException:
+            location = None
+        if location:
+            print(f"Found {label}: {location}")
+            return location
+        time.sleep(1)
+    print(f"Failed finding {label}")
+    return None
+    
+
+
 
 def is_app_running():
     """Check if the app process is already running."""
@@ -30,7 +54,7 @@ def is_app_running():
             continue
     return False
 
-def make_window_fullscreen(window_title, timeout=10):
+def make_window_fullscreen(window_title, timeout=STARTUP_TIMEOUT_SECONDS):
     """
     Find a window by title and make it fullscreen.
     Returns True if successful, False otherwise.
@@ -38,7 +62,14 @@ def make_window_fullscreen(window_title, timeout=10):
     print(f"Looking for window with title containing: '{window_title}'")
     
     # Get all windows with matching title
-    windows = pwc.getWindowsWithTitle(window_title)
+    deadline = time.monotonic() + timeout
+    windows = []
+    while time.monotonic() < deadline:
+        windows = pwc.getWindowsWithTitle(window_title)
+        if windows:
+            break
+        print(f"Window not ready; checking again in {WINDOW_CHECK_INTERVAL_SECONDS} second(s)...")
+        time.sleep(WINDOW_CHECK_INTERVAL_SECONDS)
     
     if not windows:
         print(f"No windows found with title containing '{window_title}'")
@@ -66,32 +97,28 @@ def make_window_fullscreen(window_title, timeout=10):
             else:
                 print("Warning: Window may not be active, but trying anyway")
             
-            # Step 3: Try fullscreen methods
-            print("Attempting fullscreen...")
-            
             # Method 1: Try Fn + F11
-            try:
-                pyautogui.hotkey('fn', 'f11')
-                time.sleep(0.5)
-                print("Sent Fn+F11")
-            except:
-                pass
-            
-            # Method 2: Try just F11 (if Fn is locked)
-            try:
-                # pyautogui.press('f11')
-                time.sleep(0.5)
-                # print("Sent F11")
-            except:
-                pass
-            
-            # Method 3: Try maximize as fallback
-            try:
-                win.maximize()
-                print("Maximized window (fallback)")
-            except:
-                pass
-            
+            main_view_location = find_image(MAIN_VIEW_IMAGE, "Main View tab")
+            if not main_view_location:
+                return False
+            pyautogui.click(int(main_view_location.x), int(main_view_location.y))
+            print("Clicked Main View tab")
+
+            button_location = find_image(FULLSCREEN_IMAGE, "fullscreen button")
+            if not button_location:
+                return False
+
+            # Leave the UI untouched so temporary notifications can disappear naturally.
+            print(f"Fullscreen button ready; waiting {FULLSCREEN_CLICK_DELAY_SECONDS} seconds before clicking...")
+            time.sleep(FULLSCREEN_CLICK_DELAY_SECONDS)
+
+            # Re-detect instead of using coordinates captured before the quiet period.
+            button_location = find_image(FULLSCREEN_IMAGE, "fullscreen button after quiet period")
+            if not button_location:
+                return False
+            pyautogui.click(int(button_location.x), int(button_location.y))
+            time.sleep(0.5)
+            print("Clicked fullscreen button")
             return True
             
         except Exception as e:
@@ -110,9 +137,6 @@ def main():
             print(f"Launching {APP_PATH} at {datetime.now()}")
             subprocess.Popen([APP_PATH])
             print("Waiting for application to start...")
-        
-        # Give it time to start up
-        time.sleep(10)
         
         # Make the window fullscreen
         success = make_window_fullscreen(APP_WINDOW_TITLE)
