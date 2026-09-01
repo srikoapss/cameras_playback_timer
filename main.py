@@ -135,6 +135,16 @@ def make_window_fullscreen(window_title, timeout=STARTUP_TIMEOUT_SECONDS):
     
     return False
 
+def refocus_window(title):
+    """Bring the first matching window to the foreground."""
+    windows = pwc.getWindowsWithTitle(title)
+
+    if windows:
+        try:
+            windows[0].activate()
+        except Exception:
+            pass
+
 
 def current_mode(now):
     start = dt_time(START_HOUR, START_MINUTE)
@@ -177,56 +187,51 @@ def stop_live():
     print(f"Closed app at {datetime.now()}")
 
 
-
-
-
-
 def main():
     try:
-        if is_app_running():
-            print("App already running! Not launching again.")
-            return
-        else:
-            # Launch the application
-            print(f"Launching {APP_PATH} at {datetime.now()}")
-            subprocess.Popen([APP_PATH])
-            print("Waiting for application to start...")
-        
-        # Make the window fullscreen
-        success = make_window_fullscreen(APP_WINDOW_TITLE)
-        
-        if success:
-            print("Window is now fullscreen")
-        else:
-            print("Could not make window fullscreen")
-            return
-        
-        # Calculate end time as a datetime object
-        end_datetime = datetime.now().replace(hour=END_HOUR, minute=END_MINUTE, second=0, microsecond=0)
-        
-        print(f"Running until {end_datetime.strftime('%I:%M %p')}. Press Ctrl+C to stop early.")
+        keep_runing = True
+        while keep_runing:
+            now = datetime.now()
+            mode = current_mode(now)
+            print(f"Mode : {mode} at {now}")
 
-        while datetime.now() < end_datetime:
-            # Optional: Periodically re-focus the window
-            if datetime.now().minute % 5 == 0:  # Every 5 minutes
-                windows = pwc.getWindowsWithTitle(APP_WINDOW_TITLE)
-                if windows:
-                    try:
-                        windows[0].activate()
-                        print("Refocused window")
-                    except:
-                        pass
+            if mode == "live":
+                # its time to go live mode 
+                playback.stop_playback()
+
+                if not is_app_running():
+                    if not run_live():
+                        print("Live setup failed; retrying in 60 seconds")
+                        time.sleep(60)
+                        continue
+                   
+                while current_mode(datetime.now()) == "live":
+                    refocus_window(APP_WINDOW_TITLE)
+                    time.sleep(60)
             
-            time.sleep(60)  # Check every minute
-        
-        # Close the app (using the correct process name)
-        print(f"Closing {APP_PROCESS_NAME} at {datetime.now()}")
-        subprocess.run(["taskkill", "/f", "/im", APP_PROCESS_NAME], 
-                      capture_output=True, text=True)
-        print(f"Closed app at {datetime.now()}")
+            else:
+                #its time to go playback mode 
+                stop_live()
+
+                if not playback.is_playback_running():
+                    process = playback.start_playback()
+
+                    if not process:
+                        print("Playback setup failed; retrying in 60 seconds")
+                        time.sleep(60)
+                        continue
+                
+                while current_mode(datetime.now()) == "playback":
+                    refocus_window("VLC media player")
+                    time.sleep(60)
+                
+
         
     except KeyboardInterrupt:
         print("Script stopped by user")
+        playback.stop_playback()
+        stop_live()
+        
     except Exception as e:
         print(f"Error: {e}")
 
