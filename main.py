@@ -6,6 +6,8 @@ from datetime import datetime
 from config import SETTINGS, resolve_path    
 import psutil
 import subprocess
+from datetime import datetime, time as dt_time
+import playback
 
 
 # Configuration
@@ -132,6 +134,52 @@ def make_window_fullscreen(window_title, timeout=STARTUP_TIMEOUT_SECONDS):
             continue
     
     return False
+
+
+def current_mode(now):
+    start = dt_time(START_HOUR, START_MINUTE)
+    end = dt_time(END_HOUR, END_MINUTE)
+    now_time = now.time()
+
+    if start < end :
+        return "live" if start <= now_time < end else "playback"
+    else:
+         # Live window wraps around midnight, e.g., 22:00 to 06:00
+        return "live" if now_time >= start or now_time < end else "playback"
+
+def run_live():
+
+    if is_app_running():
+        print("Live app already running")
+        return True
+    
+    print(f"Launching {APP_PATH} at {datetime.now()}")
+    subprocess.Popen([APP_PATH])
+    print("Waiting for application to start...")
+
+    success = make_window_fullscreen(APP_WINDOW_TITLE)
+
+    if success:
+        print("Window is now fullscreen")
+    else:
+        print("Could not make window fullscreen")
+    
+    return success
+
+def stop_live():
+    """ kill the live NVR"""
+    print(f"Closing {APP_PROCESS_NAME} at {datetime.now()}")
+
+    subprocess.run(
+        ["taskkill", "/f", "/im", APP_PROCESS_NAME],
+        capture_output=True, text=True
+    )
+    print(f"Closed app at {datetime.now()}")
+
+
+
+
+
 
 def main():
     try:
