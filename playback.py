@@ -5,6 +5,7 @@ import shlex
 import subprocess
 import tempfile
 import psutil
+import pywinctl as pwc
 
 from config import resolve_path, SETTINGS
 
@@ -72,6 +73,18 @@ def stop_playback():
         )
     except Exception as e:
         print(f"Error stopping playback: {e}")
+
+def refocus_playback():
+    windows = pwc.getWindowsWithTitle("VLC media player")
+
+    if not windows:
+        return False
+
+    try:
+        windows[0].activate()
+        return True
+    except Exception:
+        return False
 
 def is_playback_running():
     process_name = PLAYBACK_PROCESS_NAME
